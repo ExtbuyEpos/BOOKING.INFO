@@ -8,7 +8,7 @@ export const generateOrderId = async (): Promise<string> => {
 
 export const getStatusAdvice = async (currentStatus: string): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `You are an expert boutique consultant. Provide a short, 1-sentence professional advice for a boutique owner when a client's order is in the "${currentStatus}" phase. Keep it encouraging and high-end.`,
@@ -28,7 +28,7 @@ export const getStatusAdvice = async (currentStatus: string): Promise<string> =>
 
 export const draftWhatsAppMessage = async (order: Order, lang: 'en' | 'ar'): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
     const prompt = `Draft a very professional and warm WhatsApp message from "Zahrat Al Sawsen Boutique" to customer "${order.customerName}" regarding order #${order.id}.
     Details: Status is ${order.orderStatus}, Total is ${order.totalAmount.toFixed(3)} OMR. 
     Include a note that they can view their invoice online.
