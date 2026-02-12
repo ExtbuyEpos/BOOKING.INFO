@@ -6,7 +6,7 @@ import {
   getAdminLogs, saveAdminLog, getUsers, saveUser, 
   deleteUser, authenticateUser, isUsernameUnique, 
   getUniqueCustomers, getOrdersByPhoneAndPin,
-  getVatRate, saveVatRate
+  getVatRate, saveVatRate, getShopPhone, saveShopPhone
 } from './store/orderStore';
 import { generateOrderId, getStatusAdvice } from './services/geminiService';
 import { StatusBadge } from './components/StatusBadge';
@@ -96,7 +96,11 @@ const translations = {
     vatPricingMode: 'VAT Pricing Mode',
     extraVat: 'Extra VAT',
     includedVat: 'Included in Price',
-    sendWhatsApp: 'WhatsApp Invoice'
+    sendWhatsApp: 'WhatsApp Invoice',
+    qrCode: 'Scan QR Code',
+    shopProfile: 'Shop Profile',
+    shopPhone: 'Official Shop WhatsApp',
+    qrScanMsg: 'Scan this code to view Digital Invoice'
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -178,7 +182,11 @@ const translations = {
     vatPricingMode: 'طريقة تسعير الضريبة',
     extraVat: 'ضريبة إضافية',
     includedVat: 'مشمولة في السعر',
-    sendWhatsApp: 'فاتورة واتساب'
+    sendWhatsApp: 'فاتورة واتساب',
+    qrCode: 'رمز QR',
+    shopProfile: 'ملف المتجر',
+    shopPhone: 'رقم واتساب المتجر الرسمي',
+    qrScanMsg: 'امسح الرمز لعرض الفاتورة الرقمية'
   }
 };
 
@@ -201,6 +209,24 @@ const formatWhatsAppMessage = (order: Order, t: any, lang: Language) => {
 
 // --- SHARED UI COMPONENTS ---
 
+const QRModal: React.FC<{ url: string; onClose: () => void; lang: Language }> = ({ url, onClose, lang }) => {
+  const t = translations[lang];
+  // Using qrserver API (Free, no key needed)
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade" onClick={onClose}>
+      <div className="bg-white p-10 rounded-[3rem] shadow-2xl flex flex-col items-center gap-6 animate-zoom" onClick={e => e.stopPropagation()}>
+        <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest">{t.qrCode}</h3>
+        <div className="w-64 h-64 bg-slate-100 rounded-3xl overflow-hidden p-4 border border-slate-100 flex items-center justify-center">
+          <img src={qrUrl} className="w-full h-full" alt="QR Code" />
+        </div>
+        <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] text-center max-w-[200px] leading-relaxed">{t.qrScanMsg}</p>
+        <button onClick={onClose} className="mt-4 px-8 py-3 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[10px] hover:bg-rose-50 hover:text-rose-500 transition-soft">{t.cancel}</button>
+      </div>
+    </div>
+  );
+};
+
 const PaymentStatusBadge: React.FC<{ status: PaymentStatus; lang: Language }> = ({ status, lang }) => {
   const isPaid = status === PaymentStatus.PAID;
   return (
@@ -218,6 +244,7 @@ const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) =
   const [order, setOrder] = useState<Order | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
   const [editedOrder, setEditedOrder] = useState<Order | null>(null);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     const o = getOrderById(id || '');
@@ -326,15 +353,19 @@ const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) =
          <button onClick={() => navigate(-1)} className="px-5 py-2.5 bg-white border border-slate-200 rounded-2xl font-black text-[9px] uppercase tracking-widest text-slate-400 hover:text-amber-500 transition-soft">
            <i className="fas fa-chevron-left mr-2"></i> {t.backToDashboard}
          </button>
-         {(user.role === 'admin' || user.role === 'staff') && !isEditing && (
-           <button onClick={() => setIsEditing(true)} className="px-5 py-2.5 bg-amber-600/10 text-amber-600 border border-amber-600/30 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-amber-600 hover:text-black transition-soft">
-             <i className="fas fa-edit mr-2"></i> {t.editMode}
+         <div className="flex gap-2">
+           <button onClick={() => setShowQR(true)} className="px-5 py-2.5 bg-white border border-slate-200 rounded-2xl font-black text-[9px] uppercase tracking-widest text-amber-600 hover:scale-105 transition-soft">
+             <i className="fas fa-qrcode mr-2"></i> {t.qrCode}
            </button>
-         )}
+           {(user.role === 'admin' || user.role === 'staff') && !isEditing && (
+             <button onClick={() => setIsEditing(true)} className="px-5 py-2.5 bg-amber-600/10 text-amber-600 border border-amber-600/30 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-amber-600 hover:text-black transition-soft">
+               <i className="fas fa-edit mr-2"></i> {t.editMode}
+             </button>
+           )}
+         </div>
       </div>
 
       <div className="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 print:shadow-none print:border-none print:rounded-none animate-fade relative">
-        {/* Paid Stamp */}
         {activeOrder.paymentStatus === PaymentStatus.PAID && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-12 border-8 border-emerald-500/20 px-10 py-5 rounded-2xl pointer-events-none opacity-20">
             <span className="text-8xl font-black text-emerald-500 uppercase tracking-widest">PAID</span>
@@ -509,6 +540,7 @@ const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) =
           )}
         </div>
       </div>
+      {showQR && <QRModal url={window.location.href} onClose={() => setShowQR(false)} lang={lang} />}
     </div>
   );
 };
@@ -930,6 +962,7 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
   const [users, setUsers] = useState<User[]>([]);
   const [logs, setLogs] = useState<AdminLogEntry[]>([]);
   const [vat, setVat] = useState(getVatRate().toString());
+  const [shopPh, setShopPh] = useState(getShopPhone());
   const [showAddUser, setShowAddUser] = useState(false);
   const [newUsername, setNewUsername] = useState('');
   const [newName, setNewName] = useState('');
@@ -937,10 +970,17 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
   const [newRole, setNewRole] = useState<'admin' | 'staff' | 'viewer'>('staff');
 
   useEffect(() => { setUsers(getUsers()); setLogs(getAdminLogs()); }, []);
+  
   const handleVatSave = () => {
     saveVatRate(parseFloat(vat) || 0); alert('Global VAT Rate Configuration Updated.');
     saveAdminLog({ id: Date.now().toString(), timestamp: new Date().toISOString(), adminName: user.name, action: 'UPDATE_SETTINGS', details: `Configured Global VAT rate to ${vat}%` });
   };
+
+  const handleShopSave = () => {
+    saveShopPhone(shopPh); alert('Official Shop WhatsApp Profile Updated.');
+    saveAdminLog({ id: Date.now().toString(), timestamp: new Date().toISOString(), adminName: user.name, action: 'UPDATE_SHOP_PROFILE', details: `Official WhatsApp set to ${shopPh}` });
+  };
+
   const handleAddUser = () => {
     if (!newUsername || !newPin || !newName) return;
     const u: User = { id: Date.now().toString(), name: newName, username: newUsername, pin: newPin, role: newRole as any, createdAt: new Date().toISOString() };
@@ -952,6 +992,14 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
       <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter mb-12 italic">{t.settings}</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 space-y-12 animate-entry">
+          <div className="bg-emerald-600/5 p-8 rounded-3xl border border-emerald-600/20">
+            <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-6">{t.shopProfile}</h3>
+            <div className="flex gap-4">
+              <input type="text" value={shopPh} onChange={e => setShopPh(e.target.value)} className="flex-1 bg-white p-4 rounded-2xl border border-slate-200 text-slate-900 outline-none font-black" placeholder={t.shopPhone} />
+              <button onClick={handleShopSave} className="px-8 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-emerald-600/20 transition-soft">{t.save}</button>
+            </div>
+            <p className="text-[8px] font-bold text-slate-400 uppercase mt-4 tracking-widest">Linked WhatsApp will be used for official sharing</p>
+          </div>
           <div className="bg-amber-600/5 p-8 rounded-3xl border border-amber-600/20">
             <h3 className="text-[10px] font-black text-amber-600 uppercase tracking-[0.4em] mb-6">{t.vatSetup}</h3>
             <div className="flex gap-4">
@@ -1021,6 +1069,7 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
   const [updating, setUpdating] = useState(false);
   const [note, setNote] = useState('');
   const [previewImg, setPreviewImg] = useState<string | null>(null);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -1093,6 +1142,9 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
            <i className={`fas ${lang === 'ar' ? 'fa-chevron-right' : 'fa-chevron-left'} mr-2`}></i> {t.backToDashboard}
         </button>
         <div className="flex gap-2">
+          <button onClick={() => setShowQR(true)} className="px-5 py-3 bg-white border border-slate-100 rounded-2xl font-black text-[9px] uppercase tracking-widest text-amber-600 hover:scale-105 transition-soft">
+             <i className="fas fa-qrcode mr-2"></i> {t.qrCode}
+          </button>
           <button onClick={handleWhatsAppShare} className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-emerald-600/10 hover:scale-105 active:scale-95 transition-soft">
              <i className="fab fa-whatsapp mr-2 text-lg"></i> {t.sendWhatsApp}
           </button>
@@ -1197,6 +1249,7 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
         </div>
       </div>
       {previewImg && <ImagePreviewModal imageUrl={previewImg} onClose={() => setPreviewImg(null)} lang={lang} />}
+      {showQR && <QRModal url={`${window.location.origin}/#/invoice/${order.id}`} onClose={() => setShowQR(false)} lang={lang} />}
     </div>
   );
 };

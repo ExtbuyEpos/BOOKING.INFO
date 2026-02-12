@@ -188,6 +188,22 @@ export const saveVatRate = (rate: number): void => {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 };
 
+export const getShopPhone = (): string => {
+  const data = localStorage.getItem(SETTINGS_KEY);
+  if (data) {
+    const settings = JSON.parse(data);
+    return settings.shopPhone || '';
+  }
+  return '';
+};
+
+export const saveShopPhone = (phone: string): void => {
+  const data = localStorage.getItem(SETTINGS_KEY);
+  const settings = data ? JSON.parse(data) : {};
+  settings.shopPhone = phone;
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+};
+
 // Legacy support
 export const findUserByPin = (pin: string): User | undefined => {
   return getUsers().find(u => u.pin === pin);
