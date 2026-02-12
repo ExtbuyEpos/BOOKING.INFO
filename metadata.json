@@ -1,0 +1,7 @@
+{
+  "name": "SMART BOOKIN INFO",
+  "description": "A comprehensive order management system with PIN-based access, status tracking, and AI-powered order ID generation and validation.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
