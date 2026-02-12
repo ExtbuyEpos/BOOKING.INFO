@@ -45,7 +45,7 @@ const translations = {
     recentOrders: 'Recent Bookings',
     searchPlaceholder: 'Search by ID or Name...',
     backToDashboard: 'Return to Hub',
-    neuralInsight: 'AI Assistant Insight',
+    neuralInsight: 'Boutique Expert Advice',
     grandTotal: 'Total Payable',
     stateControl: 'Update Phase',
     statusNotePlaceholder: 'Add internal progress notes...',
@@ -75,7 +75,7 @@ const translations = {
     cutting: 'Cutting Fee',
     invoice: 'Invoice',
     print: 'Print Invoice',
-    share: 'Share Invoice',
+    share: 'Share Booking',
     subtotal: 'Subtotal',
     additionalFees: 'Additional Fees',
     date: 'Date',
@@ -95,7 +95,8 @@ const translations = {
     removeVat: 'Exclude VAT',
     vatPricingMode: 'VAT Pricing Mode',
     extraVat: 'Extra VAT',
-    includedVat: 'Included in Price'
+    includedVat: 'Included in Price',
+    sendWhatsApp: 'WhatsApp Invoice'
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -126,7 +127,7 @@ const translations = {
     recentOrders: 'الحجوزات الأخيرة',
     searchPlaceholder: 'بحث بالرقم أو الاسم...',
     backToDashboard: 'العودة للرئيسية',
-    neuralInsight: 'رؤية المساعد الذكي',
+    neuralInsight: 'نصيحة خبير البوتيك',
     grandTotal: 'إجمالي المبلغ',
     stateControl: 'تحديث المرحلة',
     statusNotePlaceholder: 'إضافة ملاحظات التقدم الداخلية...',
@@ -156,7 +157,7 @@ const translations = {
     cutting: 'رسوم القص',
     invoice: 'الفاتورة',
     print: 'طباعة الفاتورة',
-    share: 'مشاركة الفاتورة',
+    share: 'مشاركة الحجز',
     subtotal: 'المجموع الفرعي',
     additionalFees: 'رسوم إضافية',
     date: 'التاريخ',
@@ -176,11 +177,39 @@ const translations = {
     removeVat: 'إلغاء الضريبة',
     vatPricingMode: 'طريقة تسعير الضريبة',
     extraVat: 'ضريبة إضافية',
-    includedVat: 'مشمولة في السعر'
+    includedVat: 'مشمولة في السعر',
+    sendWhatsApp: 'فاتورة واتساب'
   }
 };
 
+// --- UTILS ---
+const formatWhatsAppMessage = (order: Order, t: any, lang: Language) => {
+  const itemsText = order.items.map(it => `• ${it.itemName}: ${it.price.toFixed(3)} x ${it.quantity}`).join('\n');
+  const fees = order.additionalFees || { delivery: 0, alteration: 0, cutting: 0 };
+  const shareUrl = `${window.location.origin}/#/invoice/${order.id}`;
+
+  const header = lang === 'ar' 
+    ? `*${t.boutique}*\n--------------------------`
+    : `*${t.boutique}*\n--------------------------`;
+
+  const body = lang === 'ar'
+    ? `عزيزي/ة *${order.customerName}*،\nإليك تفاصيل حجزك رقم: *${order.id}*\n\n*الأصناف:*\n${itemsText}\n\n*الرسوم الإضافية:*\n• التوصيل: ${fees.delivery.toFixed(3)}\n• التعديل: ${fees.alteration.toFixed(3)}\n• القص: ${fees.cutting.toFixed(3)}\n\n*الضريبة (${order.vatRate}%):* ${order.vatAmount.toFixed(3)}\n*الإجمالي:* *${order.totalAmount.toFixed(3)} ${t.currency}*\n\n*الحالة:* ${order.orderStatus}\n*الدفع:* ${order.paymentStatus}\n\nيمكنك عرض الفاتورة الرقمية هنا:\n${shareUrl}`
+    : `Dear *${order.customerName}*,\nHere are the details for your booking *#${order.id}*\n\n*Items:*\n${itemsText}\n\n*Additional Fees:*\n• Delivery: ${fees.delivery.toFixed(3)}\n• Alteration: ${fees.alteration.toFixed(3)}\n• Cutting: ${fees.cutting.toFixed(3)}\n\n*VAT (${order.vatRate}%):* ${order.vatAmount.toFixed(3)}\n*Total Amount:* *${order.totalAmount.toFixed(3)} ${t.currency}*\n\n*Status:* ${order.orderStatus}\n*Payment:* ${order.paymentStatus}\n\nView digital invoice here:\n${shareUrl}`;
+
+  return encodeURIComponent(`${header}\n${body}`);
+};
+
 // --- SHARED UI COMPONENTS ---
+
+const PaymentStatusBadge: React.FC<{ status: PaymentStatus; lang: Language }> = ({ status, lang }) => {
+  const isPaid = status === PaymentStatus.PAID;
+  return (
+    <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-wider border shadow-sm flex items-center gap-1.5 ${isPaid ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-rose-50 text-rose-600 border-rose-200'}`}>
+      <div className={`w-1.5 h-1.5 rounded-full ${isPaid ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></div>
+      {status}
+    </span>
+  );
+};
 
 const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => {
   const { id } = useParams<{ id: string }>();
@@ -279,6 +308,13 @@ const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) =
     }
   };
 
+  const handleWhatsAppShare = () => {
+    const message = formatWhatsAppMessage(activeOrder, t, lang);
+    const cleanPhone = activeOrder.customerPhone.replace(/\D/g, '');
+    const url = `https://wa.me/${cleanPhone.startsWith('968') ? '' : '968'}${cleanPhone}?text=${message}`;
+    window.open(url, '_blank');
+  };
+
   const activeOrder = isEditing ? editedOrder : order;
   const subtotal = activeOrder.items.reduce((sum, it) => sum + it.price * it.quantity, 0);
   const fees = activeOrder.additionalFees || { delivery: 0, alteration: 0, cutting: 0 };
@@ -297,7 +333,14 @@ const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) =
          )}
       </div>
 
-      <div className="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 print:shadow-none print:border-none print:rounded-none animate-fade">
+      <div className="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-100 print:shadow-none print:border-none print:rounded-none animate-fade relative">
+        {/* Paid Stamp */}
+        {activeOrder.paymentStatus === PaymentStatus.PAID && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rotate-12 border-8 border-emerald-500/20 px-10 py-5 rounded-2xl pointer-events-none opacity-20">
+            <span className="text-8xl font-black text-emerald-500 uppercase tracking-widest">PAID</span>
+          </div>
+        )}
+
         <div className="p-10 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start gap-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-white border border-slate-100 rounded-full flex items-center justify-center shadow-sm p-2 overflow-hidden">
@@ -332,10 +375,14 @@ const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) =
               </div>
             )}
           </div>
-          <div className="md:text-right">
+          <div className="md:text-right flex flex-col md:items-end">
             <h3 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-4">{t.lifecycle}</h3>
-            <StatusBadge status={activeOrder.orderStatus} />
-            <p className={`mt-4 text-[10px] font-black uppercase ${activeOrder.paymentStatus === PaymentStatus.PAID ? 'text-emerald-500' : 'text-rose-500'}`}>{activeOrder.paymentStatus}</p>
+            <div className="flex flex-col gap-2">
+              <StatusBadge status={activeOrder.orderStatus} />
+              <div className="flex justify-end">
+                <PaymentStatusBadge status={activeOrder.paymentStatus} lang={lang} />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -446,6 +493,9 @@ const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) =
             </>
           ) : (
             <>
+              <button onClick={handleWhatsAppShare} className="flex-1 min-w-[140px] bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl hover:scale-105 active:scale-95 transition-soft">
+                <i className="fab fa-whatsapp mr-2 text-lg"></i> {t.sendWhatsApp}
+              </button>
               <button onClick={() => window.print()} className="flex-1 min-w-[140px] bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-xs shadow-xl hover:scale-105 active:scale-95 transition-soft">
                 <i className="fas fa-print mr-2"></i> {t.print}
               </button>
@@ -559,7 +609,9 @@ const ResponsiveOrderList: React.FC<{
                   {!hideCustomerName && <td className="px-8 py-6 font-black text-slate-900 tracking-tight">{order.customerName}</td>}
                   <td className="px-8 py-6">
                     <div className="font-black text-slate-900">{order.totalAmount.toFixed(3)} {t.currency}</div>
-                    <span className={`text-[8px] font-black uppercase ${order.paymentStatus === PaymentStatus.PAID ? 'text-emerald-500' : 'text-rose-500'}`}>{order.paymentStatus}</span>
+                    <div className="mt-1 flex">
+                      <PaymentStatusBadge status={order.paymentStatus} lang={lang} />
+                    </div>
                   </td>
                   <td className="px-8 py-6"><StatusBadge status={order.orderStatus} /></td>
                   <td className="px-8 py-6 text-right"><i className="fas fa-chevron-right text-slate-200 group-hover:text-amber-500 transition-soft"></i></td>
@@ -585,7 +637,7 @@ const ResponsiveOrderList: React.FC<{
                   {!hideCustomerName && <div className="text-slate-900 font-black text-sm truncate">{order.customerName}</div>}
                   <div className="flex justify-between items-center mt-3">
                     <StatusBadge status={order.orderStatus} />
-                    <span className={`text-[8px] font-black uppercase ${order.paymentStatus === PaymentStatus.PAID ? 'text-emerald-500' : 'text-rose-500'}`}>{order.paymentStatus}</span>
+                    <PaymentStatusBadge status={order.paymentStatus} lang={lang} />
                   </div>
                 </div>
              </div>
@@ -772,7 +824,7 @@ const CreateOrderModal: React.FC<{ user: User; lang: Language; onClose: () => vo
                 </div>
                 <button 
                   onClick={() => setPaymentStatus(paymentStatus === PaymentStatus.PAID ? PaymentStatus.UNPAID : PaymentStatus.PAID)}
-                  className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase transition-soft border ${paymentStatus === PaymentStatus.PAID ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20' : 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/20'}`}
+                  className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase transition-soft border ${paymentStatus === PaymentStatus.PAID ? 'bg-emerald-50 text-white border-emerald-400 shadow-lg shadow-emerald-500/20' : 'bg-rose-50 text-white border-rose-400 shadow-lg shadow-rose-500/20'}`}
                 >
                   <i className={`fas ${paymentStatus === PaymentStatus.PAID ? 'fa-check-circle' : 'fa-times-circle'} mr-2`}></i>
                   {paymentStatus === PaymentStatus.PAID ? t.markAsUnpaid : t.markAsPaid}
@@ -1010,6 +1062,28 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
     setOrder(updated);
   };
 
+  const handleShare = async () => {
+    if (!order) return;
+    const shareUrl = `${window.location.origin}/#/order/${order.id}`;
+    const text = `Booking Details: ${t.boutique}\nID: ${order.id}\nClient: ${order.customerName}\nTotal: ${order.totalAmount.toFixed(3)} ${t.currency}\nStatus: ${order.orderStatus}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Booking Details', text, url: shareUrl });
+      } catch (err) { console.error(err); }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Link copied to clipboard!');
+    }
+  };
+
+  const handleWhatsAppShare = () => {
+    if (!order) return;
+    const message = formatWhatsAppMessage(order, t, lang);
+    const cleanPhone = order.customerPhone.replace(/\D/g, '');
+    const url = `https://wa.me/${cleanPhone.startsWith('968') ? '' : '968'}${cleanPhone}?text=${message}`;
+    window.open(url, '_blank');
+  };
+
   if (!order) return <div className="p-20 text-center font-black text-slate-400 uppercase tracking-widest">{t.noOrders}</div>;
 
   return (
@@ -1019,6 +1093,12 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
            <i className={`fas ${lang === 'ar' ? 'fa-chevron-right' : 'fa-chevron-left'} mr-2`}></i> {t.backToDashboard}
         </button>
         <div className="flex gap-2">
+          <button onClick={handleWhatsAppShare} className="px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-emerald-600/10 hover:scale-105 active:scale-95 transition-soft">
+             <i className="fab fa-whatsapp mr-2 text-lg"></i> {t.sendWhatsApp}
+          </button>
+          <button onClick={handleShare} className="px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-sm hover:scale-105 active:scale-95 transition-soft">
+             <i className="fas fa-share-alt mr-2 text-amber-600"></i> {t.share}
+          </button>
           <Link to={`/invoice/${order.id}`} className="px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-amber-600/10 hover:scale-105 active:scale-95 transition-soft">
              <i className="fas fa-file-invoice mr-2"></i> {t.invoice}
           </Link>
@@ -1066,9 +1146,12 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
              </div>
              <div className="mt-8 pt-8 border-t border-slate-100 flex justify-between items-center">
                 <span className="font-black text-2xl tracking-tighter text-slate-900 uppercase">{t.grandTotal}</span>
-                <div className="text-right">
+                <div className="text-right flex flex-col items-end">
                   <span className="font-black text-4xl text-amber-600 block tracking-tighter">{order.totalAmount.toFixed(3)} <span className="text-sm font-black">{t.currency}</span></span>
-                  <button onClick={togglePaymentStatus} className={`mt-3 text-[8px] font-black uppercase px-4 py-1.5 rounded-full border shadow-sm transition-soft ${order.paymentStatus === PaymentStatus.PAID ? 'bg-emerald-50 text-emerald-600 border-emerald-200/50' : 'bg-rose-50 text-rose-600 border-rose-200/50'}`}>{order.paymentStatus === PaymentStatus.PAID ? t.markAsUnpaid : t.markAsPaid}</button>
+                  <button onClick={togglePaymentStatus} className={`mt-3 text-[9px] font-black uppercase px-6 py-2.5 rounded-full border shadow-xl transition-soft flex items-center gap-2 ${order.paymentStatus === PaymentStatus.PAID ? 'bg-emerald-600 text-white border-emerald-500 hover:bg-emerald-500' : 'bg-rose-600 text-white border-rose-500 hover:bg-rose-500'}`}>
+                    <i className={`fas ${order.paymentStatus === PaymentStatus.PAID ? 'fa-check-circle' : 'fa-times-circle'}`}></i>
+                    {order.paymentStatus === PaymentStatus.PAID ? t.markAsUnpaid : t.markAsPaid}
+                  </button>
                 </div>
              </div>
           </section>
