@@ -27,6 +27,12 @@ export interface OrderHistoryEntry {
   note?: string;
 }
 
+export interface AdditionalFees {
+  delivery: number;
+  alteration: number;
+  cutting: number;
+}
+
 export interface Order {
   id: string;
   customerName: string;
@@ -35,6 +41,9 @@ export interface Order {
   customerPin: string;
   items: OrderItem[];
   totalAmount: number;
+  vatRate: number;
+  vatAmount: number;
+  additionalFees?: AdditionalFees;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
   createdAt: string;

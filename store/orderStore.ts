@@ -4,6 +4,7 @@ import { Order, AdminLogEntry, User } from '../types';
 const STORAGE_KEY = 'smart_booking_orders';
 const LOGS_KEY = 'smart_booking_admin_logs';
 const USERS_KEY = 'smart_booking_users';
+const SETTINGS_KEY = 'smart_booking_settings';
 
 // Default Admin for first run
 const DEFAULT_ADMIN: User = {
@@ -168,6 +169,23 @@ export const getUniqueCustomers = (): UniqueCustomer[] => {
   });
   
   return Array.from(customerMap.values());
+};
+
+// --- SETTINGS ---
+export const getVatRate = (): number => {
+  const data = localStorage.getItem(SETTINGS_KEY);
+  if (data) {
+    const settings = JSON.parse(data);
+    return settings.vatRate || 0;
+  }
+  return 0;
+};
+
+export const saveVatRate = (rate: number): void => {
+  const data = localStorage.getItem(SETTINGS_KEY);
+  const settings = data ? JSON.parse(data) : {};
+  settings.vatRate = rate;
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 };
 
 // Legacy support
