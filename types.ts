@@ -58,3 +58,7 @@ export interface AdminLogEntry {
   details: string;
   orderId?: string;
 }
+
+// Added Language and Theme types
+export type Language = 'en' | 'ar';
+export type Theme = 'light' | 'dark';
