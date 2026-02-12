@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Order, OrderStatus, User, PaymentStatus, OrderItem, AdminLogEntry, Language, AdditionalFees } from './types';
@@ -210,13 +209,11 @@ const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) =
       o.vatAmount = 0;
       o.totalAmount = st + feeSum;
     } else if (o.vatIncludedInPrice) {
-      // VAT is already in st + feeSum
       const gross = st + feeSum;
       const net = gross / (1 + o.vatRate / 100);
       o.vatAmount = gross - net;
       o.totalAmount = gross;
     } else {
-      // VAT added extra
       const net = st + feeSum;
       o.vatAmount = net * (o.vatRate / 100);
       o.totalAmount = net + o.vatAmount;
@@ -651,19 +648,16 @@ const CreateOrderModal: React.FC<{ user: User; lang: Language; onClose: () => vo
 
     if (includeVat) {
       if (vatIncludedInPrice) {
-        // sub + feeTotal already contains VAT
         const gross = sub + feeTotal;
         const net = gross / (1 + currentVatRate / 100);
         vatAmt = gross - net;
         total = gross;
       } else {
-        // VAT is extra
         const net = sub + feeTotal;
         vatAmt = net * (currentVatRate / 100);
         total = net + vatAmt;
       }
     }
-
     return { sub, feeTotal, vatAmt, total };
   }, [items, deliveryFee, alterationFee, cuttingFee, currentVatRate, includeVat, vatIncludedInPrice]);
 
@@ -679,21 +673,10 @@ const CreateOrderModal: React.FC<{ user: User; lang: Language; onClose: () => vo
     };
 
     const newOrder: Order = {
-      id,
-      customerName,
-      customerPhone,
-      customerPin: customerPin || '1234',
-      customerAddress,
-      items,
-      totalAmount: totals.total,
-      vatRate: currentVatRate,
-      vatAmount: totals.vatAmt,
-      includeVat: includeVat,
-      vatIncludedInPrice: vatIncludedInPrice,
-      additionalFees: fees,
-      paymentStatus: paymentStatus,
-      orderStatus: OrderStatus.CREATED,
-      createdAt: new Date().toISOString(),
+      id, customerName, customerPhone, customerPin: customerPin || '1234', customerAddress,
+      items, totalAmount: totals.total, vatRate: currentVatRate, vatAmount: totals.vatAmt,
+      includeVat, vatIncludedInPrice, additionalFees: fees,
+      paymentStatus, orderStatus: OrderStatus.CREATED, createdAt: new Date().toISOString(),
       history: [{ status: OrderStatus.CREATED, timestamp: new Date().toISOString(), updatedBy: user.name, note: 'Initial booking created.' }]
     };
     saveOrder(newOrder);
@@ -774,41 +757,39 @@ const CreateOrderModal: React.FC<{ user: User; lang: Language; onClose: () => vo
                 <div className="flex items-center gap-3">
                   <span className="font-black text-amber-500 text-sm">{totals.vatAmt.toFixed(3)}</span>
                   <div className="flex gap-1">
-                    <button 
-                      onClick={() => setIncludeVat(!includeVat)} 
-                      className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-soft border ${includeVat ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'bg-rose-500/20 text-rose-400 border-rose-500/50'}`}
-                    >
-                      {includeVat ? 'VAT ON' : 'VAT OFF'}
-                    </button>
+                    <button onClick={() => setIncludeVat(!includeVat)} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-soft border ${includeVat ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' : 'bg-rose-500/20 text-rose-400 border-rose-500/50'}`}>{includeVat ? 'VAT ON' : 'VAT OFF'}</button>
                     {includeVat && (
-                      <button 
-                        onClick={() => setVatIncludedInPrice(!vatIncludedInPrice)} 
-                        className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-soft border ${vatIncludedInPrice ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' : 'bg-slate-500/20 text-slate-400 border-slate-500/50'}`}
-                        title={t.vatPricingMode}
-                      >
-                        {vatIncludedInPrice ? 'Incl.' : 'Extra'}
-                      </button>
+                      <button onClick={() => setVatIncludedInPrice(!vatIncludedInPrice)} className={`px-3 py-1 rounded-full text-[8px] font-black uppercase transition-soft border ${vatIncludedInPrice ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' : 'bg-slate-500/20 text-slate-400 border-slate-500/50'}`} title={t.vatPricingMode}>{vatIncludedInPrice ? 'Incl.' : 'Extra'}</button>
                     )}
                   </div>
                 </div>
              </div>
+             
+             <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase text-slate-400">{t.paymentStatus}</span>
+                  <span className={`text-[8px] font-black uppercase ${paymentStatus === PaymentStatus.PAID ? 'text-emerald-400' : 'text-rose-400'}`}>{paymentStatus}</span>
+                </div>
+                <button 
+                  onClick={() => setPaymentStatus(paymentStatus === PaymentStatus.PAID ? PaymentStatus.UNPAID : PaymentStatus.PAID)}
+                  className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase transition-soft border ${paymentStatus === PaymentStatus.PAID ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20' : 'bg-rose-500 text-white border-rose-400 shadow-lg shadow-rose-500/20'}`}
+                >
+                  <i className={`fas ${paymentStatus === PaymentStatus.PAID ? 'fa-check-circle' : 'fa-times-circle'} mr-2`}></i>
+                  {paymentStatus === PaymentStatus.PAID ? t.markAsUnpaid : t.markAsPaid}
+                </button>
+             </div>
+
              <div className="flex justify-between text-xl font-black text-white pt-3 border-t border-white/10"><span>{t.grandTotal}</span><span>{totals.total.toFixed(3)} {t.currency}</span></div>
           </div>
         </div>
         <div className="p-8 border-t border-slate-100 flex gap-4">
-          <button disabled={loading} onClick={handleSave} className="flex-1 bg-amber-600 text-black py-4 rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 transition-soft">
-            {loading ? '...' : t.save}
-          </button>
-          <button onClick={onClose} className="px-8 bg-slate-100 text-slate-500 py-4 rounded-2xl font-black uppercase text-xs transition-soft">
-            {t.cancel}
-          </button>
+          <button disabled={loading} onClick={handleSave} className="flex-1 bg-amber-600 text-black py-4 rounded-2xl font-black uppercase text-xs shadow-xl active:scale-95 transition-soft">{loading ? '...' : t.save}</button>
+          <button onClick={onClose} className="px-8 bg-slate-100 text-slate-500 py-4 rounded-2xl font-black uppercase text-xs transition-soft">{t.cancel}</button>
         </div>
       </div>
     </div>
   );
 };
-
-// --- PAGES ---
 
 const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => {
   const navigate = useNavigate();
@@ -853,7 +834,6 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
           </button>
         )}
       </header>
-      
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
         <StatCard label={t.volume} value={stats.total} icon="fa-scroll" color="text-amber-600" to="/filtered/analytics/volume" />
         <StatCard label={t.pending} value={stats.pending} icon="fa-spa" color="text-amber-600" to="/filtered/analytics/pending" />
@@ -861,7 +841,6 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
         <StatCard label={t.unpaid} value={stats.unpaid} icon="fa-hand-holding-dollar" color="text-rose-600" to="/filtered/analytics/unpaid" />
         <StatCard label={t.revenue} value={`${stats.revenue.toFixed(3)} ${t.currency}`} icon="fa-vault" color="text-amber-600" to="/filtered/analytics/revenue" />
       </div>
-
       <div className="bg-white rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden animate-entry">
         <div className="p-5 md:p-8 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-center gap-4">
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] self-start">{t.recentOrders}</h3>
@@ -878,6 +857,22 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
   );
 };
 
+const StatCard: React.FC<{ label: string; value: string | number; icon: string; color: string; to?: string }> = ({ label, value, icon, color, to }) => {
+  const Card = (
+    <div className={`bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm transition-all duration-300 ${to ? 'hover:border-amber-500/30 hover:-translate-y-1 hover:shadow-lg group' : ''}`}>
+      <div className="flex justify-between items-start mb-5">
+        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-amber-500 transition-colors">{label}</span>
+        <div className={`w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center transition-all group-hover:bg-amber-600/10`}>
+          <i className={`fas ${icon} ${color} opacity-40 group-hover:opacity-100 transition-all group-hover:scale-110 text-sm`}></i>
+        </div>
+      </div>
+      <div className="text-xl md:text-2xl font-black text-slate-900 truncate transition-all group-hover:tracking-tight tracking-tighter">{value}</div>
+    </div>
+  );
+  if (to) return <Link to={to}>{Card}</Link>;
+  return Card;
+};
+
 const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => {
   const t = translations[lang];
   const [users, setUsers] = useState<User[]>([]);
@@ -889,45 +884,29 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
   const [newPin, setNewPin] = useState('');
   const [newRole, setNewRole] = useState<'admin' | 'staff' | 'viewer'>('staff');
 
-  useEffect(() => {
-    setUsers(getUsers());
-    setLogs(getAdminLogs());
-  }, []);
-
+  useEffect(() => { setUsers(getUsers()); setLogs(getAdminLogs()); }, []);
   const handleVatSave = () => {
-    saveVatRate(parseFloat(vat) || 0);
-    alert('Global VAT Rate Configuration Updated.');
-    saveAdminLog({ 
-      id: Date.now().toString(), 
-      timestamp: new Date().toISOString(), 
-      adminName: user.name, 
-      action: 'UPDATE_SETTINGS', 
-      details: `Configured Global VAT rate to ${vat}%` 
-    });
+    saveVatRate(parseFloat(vat) || 0); alert('Global VAT Rate Configuration Updated.');
+    saveAdminLog({ id: Date.now().toString(), timestamp: new Date().toISOString(), adminName: user.name, action: 'UPDATE_SETTINGS', details: `Configured Global VAT rate to ${vat}%` });
   };
-
   const handleAddUser = () => {
     if (!newUsername || !newPin || !newName) return;
     const u: User = { id: Date.now().toString(), name: newName, username: newUsername, pin: newPin, role: newRole as any, createdAt: new Date().toISOString() };
-    if (saveUser(u)) { setUsers(getUsers()); setShowAddUser(false); setNewUsername(''); setNewName(''); setNewPin(''); }
-    else alert('Username must be unique');
+    if (saveUser(u)) { setUsers(getUsers()); setShowAddUser(false); setNewUsername(''); setNewName(''); setNewPin(''); } else alert('Username must be unique');
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-12 animate-fade" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter mb-12 italic">{t.settings}</h2>
-      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 space-y-12 animate-entry">
           <div className="bg-amber-600/5 p-8 rounded-3xl border border-amber-600/20">
             <h3 className="text-[10px] font-black text-amber-600 uppercase tracking-[0.4em] mb-6">{t.vatSetup}</h3>
-            <p className="text-[10px] font-bold text-slate-500 mb-6 leading-relaxed">This is a one-time setup. The VAT rate below will be applied to all new bookings automatically.</p>
             <div className="flex gap-4">
-              <input type="number" step="0.1" value={vat} onChange={e => setVat(e.target.value)} className="flex-1 bg-white p-4 rounded-2xl border border-slate-200 text-slate-900 outline-none focus:ring-2 focus:ring-amber-500/20 font-black" placeholder={t.vatLabel} />
-              <button onClick={handleVatSave} className="px-8 bg-amber-600 text-black rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-amber-600/20 active:scale-95 transition-soft">{t.save}</button>
+              <input type="number" step="0.1" value={vat} onChange={e => setVat(e.target.value)} className="flex-1 bg-white p-4 rounded-2xl border border-slate-200 text-slate-900 outline-none font-black" placeholder={t.vatLabel} />
+              <button onClick={handleVatSave} className="px-8 bg-amber-600 text-black rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-amber-600/20 transition-soft">{t.save}</button>
             </div>
           </div>
-
           <div>
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">{t.userManagement}</h3>
@@ -949,10 +928,10 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
             )}
             <div className="space-y-4">
               {users.map(u => (
-                <div key={u.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 transition-soft hover:border-amber-500/20">
+                <div key={u.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-amber-500/20 transition-soft">
                   <div>
-                    <div className="font-black text-slate-900 text-sm">{u.name} <span className="text-[8px] text-amber-600 ml-2 uppercase tracking-[0.2em] border border-amber-600/30 px-2 py-0.5 rounded-full">{u.role}</span></div>
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">@{u.username}</div>
+                    <div className="font-black text-slate-900 text-sm">{u.name} <span className="text-[8px] text-amber-600 ml-2 uppercase border border-amber-600/30 px-2 py-0.5 rounded-full">{u.role}</span></div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase mt-1">@{u.username}</div>
                   </div>
                   {u.role !== 'admin' && <button onClick={() => { if(window.confirm('Delete this system user?')) { deleteUser(u.id); setUsers(getUsers()); } }} className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white transition-soft"><i className="fas fa-trash-alt text-xs"></i></button>}
                 </div>
@@ -960,10 +939,9 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
             </div>
           </div>
         </section>
-
         <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 animate-entry stagger-1 h-fit">
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8">{t.adminLogs}</h3>
-          <div className="space-y-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
+          <div className="space-y-4 max-h-[700px] overflow-y-auto no-scrollbar">
             {logs.map(log => (
               <div key={log.id} className="p-5 bg-slate-50 rounded-2xl border border-slate-100 group transition-soft hover:bg-white">
                 <div className="flex justify-between items-start mb-2">
@@ -971,7 +949,7 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
                   <span className="text-slate-400 text-[8px] font-bold uppercase">{new Date(log.timestamp).toLocaleTimeString()}</span>
                 </div>
                 <p className="text-[11px] font-bold text-slate-800 leading-relaxed italic">"{log.details}"</p>
-                <div className="text-[8px] text-slate-400 mt-3 font-black uppercase tracking-[0.2em] border-t border-slate-100 pt-2">{log.adminName}</div>
+                <div className="text-[8px] text-slate-400 mt-3 font-black uppercase border-t border-slate-100 pt-2">{log.adminName}</div>
               </div>
             ))}
           </div>
@@ -1047,10 +1025,9 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
           <StatusBadge status={order.orderStatus} />
         </div>
       </header>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 space-y-10">
-          <section className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl text-center md:text-left flex items-center gap-8 group animate-entry relative overflow-hidden">
+          <section className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl flex items-center gap-8 group animate-entry relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 -mr-16 -mt-16 rounded-full blur-2xl"></div>
             <div className="w-20 h-20 bg-amber-600 rounded-3xl flex items-center justify-center shrink-0 shadow-xl relative z-10"><i className="fas fa-robot text-white text-3xl"></i></div>
             <div className="flex-1 relative z-10">
@@ -1058,7 +1035,6 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
                <p className="text-white text-xl font-black italic">"{advice || 'Consulting database...'}"</p>
             </div>
           </section>
-
           <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 animate-entry stagger-1">
              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8">{t.manifest}</h3>
              <div className="space-y-4">
@@ -1096,7 +1072,6 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
                 </div>
              </div>
           </section>
-
           <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 animate-entry stagger-2">
              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-10">{t.history}</h3>
              <div className="relative space-y-8 pl-6 border-l-2 border-slate-100">
@@ -1116,17 +1091,16 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
              </div>
           </section>
         </div>
-
         <div className="space-y-10">
           {(user.role === 'admin' || user.role === 'staff') && (
             <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm animate-entry stagger-1">
                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-6">{t.stateControl}</h3>
                <div className="grid grid-cols-1 gap-2 mb-6">
                  {Object.values(OrderStatus).map(s => (
-                    <button key={s} disabled={order.orderStatus === s || updating} onClick={() => handleUpdate(s)} className={`py-3.5 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-soft border ${order.orderStatus === s ? 'bg-amber-600 text-black border-amber-600' : 'bg-slate-50 text-slate-500 border-transparent hover:border-amber-600/50'}`}>{s}</button>
+                    <button key={s} disabled={order.orderStatus === s || updating} onClick={() => handleUpdate(s)} className={`py-3.5 rounded-2xl font-black uppercase text-[10px] transition-soft border ${order.orderStatus === s ? 'bg-amber-600 text-black border-amber-600' : 'bg-slate-50 text-slate-500 border-transparent hover:border-amber-600/50'}`}>{s}</button>
                  ))}
                </div>
-               <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t.statusNotePlaceholder} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-amber-500/20 h-28 resize-none transition-soft" />
+               <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={t.statusNotePlaceholder} className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs text-slate-900 outline-none h-28 resize-none" />
             </section>
           )}
           <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 animate-entry stagger-2">
@@ -1144,13 +1118,11 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
   );
 };
 
-// --- REST UNCHANGED ---
 const FilteredOrdersPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => {
   const { type, value } = useParams<{ type: string; value: string }>();
   const navigate = useNavigate();
   const t = translations[lang];
   const [orders, setOrders] = useState<Order[]>([]);
-
   useEffect(() => {
     const all = getOrders();
     if (type === 'status') setOrders(all.filter(o => o.orderStatus === value));
@@ -1163,36 +1135,17 @@ const FilteredOrdersPage: React.FC<{ user: User; lang: Language }> = ({ user, la
       else if (value === 'paid') setOrders(all.filter(o => o.paymentStatus === PaymentStatus.PAID));
     }
   }, [type, value]);
-
   const totalRevenue = useMemo(() => orders.reduce((sum, o) => sum + o.totalAmount, 0), [orders]);
-
-  const pageTitle = useMemo(() => {
-    if (type === 'analytics') {
-      if (value === 'volume') return t.volume;
-      if (value === 'pending') return t.pending;
-      if (value === 'completed') return t.completed;
-      if (value === 'revenue') return t.revenue;
-      if (value === 'unpaid') return t.unpaid;
-      if (value === 'paid') return t.paid;
-    }
-    return `${t.status}: ${value}`;
-  }, [type, value, t]);
+  const pageTitle = type === 'analytics' ? (value === 'revenue' ? t.revenue : (value === 'unpaid' ? t.unpaid : (value === 'paid' ? t.paid : value))) : value;
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-12 animate-fade" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-       <button onClick={() => navigate(-1)} className="mb-8 px-5 py-3 bg-white border border-slate-100 rounded-2xl font-black text-[9px] uppercase tracking-widest text-slate-400 hover:text-amber-500 transition-soft">
-        <i className={`fas ${lang === 'ar' ? 'fa-chevron-right' : 'fa-chevron-left'} mr-2`}></i> {t.backToDashboard}
-      </button>
+       <button onClick={() => navigate(-1)} className="mb-8 px-5 py-3 bg-white border border-slate-100 rounded-2xl font-black text-[9px] uppercase tracking-widest text-slate-400 hover:text-amber-500 transition-soft"><i className="fas fa-chevron-left mr-2"></i> {t.backToDashboard}</button>
       <div className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
-        <div>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic">{pageTitle}</h2>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-3">Statistical Breakdown</p>
-        </div>
+        <div><h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic">{pageTitle}</h2></div>
         {(value === 'revenue' || value === 'unpaid' || value === 'paid') && (
           <div className="bg-amber-600 p-8 rounded-[2.5rem] shadow-xl shadow-amber-600/10 min-w-[240px]">
-            <span className="text-[9px] font-black text-black/60 uppercase tracking-[0.3em] block mb-2">
-              {value === 'unpaid' ? 'Total Outstanding' : value === 'paid' ? 'Total Collected' : t.totalRevenue}
-            </span>
+            <span className="text-[9px] font-black text-black/60 uppercase tracking-[0.3em] block mb-2">{t.totalRevenue}</span>
             <span className="text-3xl font-black text-white tracking-tighter">{totalRevenue.toFixed(3)} <span className="text-xs uppercase">{t.currency}</span></span>
           </div>
         )}
@@ -1204,33 +1157,16 @@ const FilteredOrdersPage: React.FC<{ user: User; lang: Language }> = ({ user, la
   );
 };
 
-const StatCard: React.FC<{ label: string; value: string | number; icon: string; color: string; to?: string }> = ({ label, value, icon, color, to }) => {
-  const Card = (
-    <div className={`bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm transition-all duration-300 ${to ? 'hover:border-amber-500/30 hover:-translate-y-1 hover:shadow-lg group' : ''}`}>
-      <div className="flex justify-between items-start mb-5">
-        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-amber-500 transition-colors">{label}</span>
-        <div className={`w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center transition-all group-hover:bg-amber-600/10`}>
-          <i className={`fas ${icon} ${color} opacity-40 group-hover:opacity-100 transition-all group-hover:scale-110 text-sm`}></i>
-        </div>
-      </div>
-      <div className="text-xl md:text-2xl font-black text-slate-900 truncate transition-all group-hover:tracking-tight tracking-tighter">{value}</div>
-    </div>
-  );
-  if (to) return <Link to={to}>{Card}</Link>;
-  return Card;
-};
-
 const CustomerListPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => {
   const navigate = useNavigate();
   const t = translations[lang];
   const customers = getUniqueCustomers();
-
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-12 animate-fade" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter mb-8 italic">{t.customers}</h2>
       <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden animate-entry">
         <table className="w-full text-left">
-          <thead className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] border-b border-slate-50">
+          <thead className="text-slate-400 text-[10px] font-black uppercase border-b border-slate-50">
             <tr><th className="px-8 py-6">{t.name}</th><th className="px-8 py-6">{t.phone}</th><th className="px-8 py-6">{t.orderCount}</th><th className="px-8 py-6">{t.lastOrder}</th><th className="px-8 py-6"></th></tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
@@ -1255,28 +1191,14 @@ const CustomerProfilePage: React.FC<{ user: User; lang: Language }> = ({ user, l
   const navigate = useNavigate();
   const t = translations[lang];
   const [orders, setOrders] = useState<Order[]>([]);
-
-  useEffect(() => {
-    const all = getOrders();
-    setOrders(all.filter(o => o.customerPhone === phone));
-  }, [phone]);
-
+  useEffect(() => { const all = getOrders(); setOrders(all.filter(o => o.customerPhone === phone)); }, [phone]);
   const totalSpent = useMemo(() => orders.reduce((sum, o) => sum + o.totalAmount, 0), [orders]);
-
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-12 animate-fade" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <button onClick={() => navigate(-1)} className="mb-8 px-5 py-3 bg-white border border-slate-100 rounded-2xl font-black text-[9px] uppercase tracking-widest text-slate-400 hover:text-amber-500 transition-soft">
-        <i className={`fas ${lang === 'ar' ? 'fa-chevron-right' : 'fa-chevron-left'} mr-2`}></i> {t.backToDashboard}
-      </button>
+      <button onClick={() => navigate(-1)} className="mb-8 px-5 py-3 bg-white border border-slate-100 rounded-2xl font-black text-[9px] uppercase tracking-widest text-slate-400 hover:text-amber-500 transition-soft"><i className="fas fa-chevron-left mr-2"></i> {t.backToDashboard}</button>
       <div className="mb-10 flex justify-between items-end">
-        <div>
-          <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic">{orders[0]?.customerName || t.customerInfo}</h2>
-          <p className="text-amber-600 font-black uppercase tracking-[0.3em] text-xs mt-3">{phone}</p>
-        </div>
-        <div className="text-right">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Lifetime Volume</span>
-          <span className="text-3xl font-black text-slate-900 tracking-tighter">{totalSpent.toFixed(3)} <span className="text-sm font-black text-amber-600">{t.currency}</span></span>
-        </div>
+        <div><h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter italic">{orders[0]?.customerName || t.customerInfo}</h2><p className="text-amber-600 font-black uppercase text-xs mt-3">{phone}</p></div>
+        <div className="text-right"><span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Lifetime Volume</span><span className="text-3xl font-black text-slate-900 tracking-tighter">{totalSpent.toFixed(3)} <span className="text-sm font-black text-amber-600">{t.currency}</span></span></div>
       </div>
       <div className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden animate-entry">
         <ResponsiveOrderList orders={orders} lang={lang} onPreview={() => {}} onNavigate={id => navigate(`/order/${id}`)} hideCustomerName />
@@ -1286,22 +1208,10 @@ const CustomerProfilePage: React.FC<{ user: User; lang: Language }> = ({ user, l
 };
 
 const LoginPage: React.FC<{ onLogin: (u: User) => void; lang: Language; setLang: (l: Language) => void }> = ({ onLogin, lang, setLang }) => {
-  const [id, setId] = useState('');
-  const [pin, setPin] = useState('');
-  const [error, setError] = useState(false);
-  const t = translations[lang];
-
+  const [id, setId] = useState(''); const [pin, setPin] = useState(''); const [error, setError] = useState(false); const t = translations[lang];
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const u = authenticateUser(id, pin);
-    if (u) {
-      onLogin(u);
-    } else {
-      setError(true);
-      setTimeout(() => setError(false), 2000);
-    }
+    e.preventDefault(); const u = authenticateUser(id, pin); if (u) onLogin(u); else { setError(true); setTimeout(() => setError(false), 2000); }
   };
-
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
@@ -1317,10 +1227,7 @@ const LoginPage: React.FC<{ onLogin: (u: User) => void; lang: Language; setLang:
           <p className="text-[10px] font-black text-amber-600/60 uppercase tracking-[0.5em] mt-3">Smart Management Suite</p>
         </div>
         <form onSubmit={handleSubmit} className={`bg-white/10 backdrop-blur-3xl p-10 rounded-[2.5rem] border border-white/10 shadow-2xl space-y-6 ${error ? 'animate-shake' : ''}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-white font-black text-xs uppercase tracking-widest">{t.securePortal}</h2>
-            <button type="button" onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="text-[10px] font-black text-amber-600 uppercase tracking-widest px-3 py-1 rounded-full border border-amber-600/30 transition-soft">{lang === 'en' ? 'AR' : 'EN'}</button>
-          </div>
+          <div className="flex justify-between items-center mb-4"><h2 className="text-white font-black text-xs uppercase tracking-widest">{t.securePortal}</h2><button type="button" onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="text-[10px] font-black text-amber-600 uppercase tracking-widest px-3 py-1 rounded-full border border-amber-600/30 transition-soft">{lang === 'en' ? 'AR' : 'EN'}</button></div>
           <div className="space-y-4">
             <input type="text" placeholder={t.loginId} value={id} onChange={e => setId(e.target.value)} className="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-amber-500/20" />
             <input type="password" placeholder={t.password} value={pin} onChange={e => setPin(e.target.value)} className="w-full px-6 py-4 bg-white/5 border border-white/5 rounded-2xl text-white font-bold outline-none focus:ring-2 focus:ring-amber-500/20 tracking-widest" />
@@ -1342,12 +1249,9 @@ const App: React.FC = () => {
   });
   const [lang, setLang] = useState<Language>('en');
   const location = useLocation();
-
   const handleLogin = (u: User) => { setUser(u); localStorage.setItem('zs_session_user', JSON.stringify(u)); };
   const handleLogout = () => { setUser(null); localStorage.removeItem('zs_session_user'); };
-
   if (!user) return <LoginPage onLogin={handleLogin} lang={lang} setLang={setLang} />;
-
   return (
     <div className={`min-h-screen transition-colors duration-500 flex flex-col bg-slate-50 text-slate-900`}>
       <Navigation user={user} onLogout={handleLogout} lang={lang} setLang={setLang} />
@@ -1366,33 +1270,19 @@ const App: React.FC = () => {
         </div>
         <Footer lang={lang} />
       </div>
-      
       <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 backdrop-blur-xl border-t border-slate-200 z-40 flex items-center justify-around px-4 print:hidden">
-        <Link to="/" className={`flex flex-col items-center gap-1 ${location.pathname === '/' ? 'text-amber-600' : 'text-slate-400'}`}>
-          <i className="fas fa-home text-lg"></i>
-          <span className="text-[8px] font-black uppercase">Home</span>
-        </Link>
-        {user.role !== 'customer' && (
-          <Link to="/customers" className={`flex flex-col items-center gap-1 ${location.pathname.startsWith('/customer') || location.pathname === '/customers' ? 'text-amber-600' : 'text-slate-400'}`}>
-            <i className="fas fa-users text-lg"></i>
-            <span className="text-[8px] font-black uppercase">Clients</span>
-          </Link>
-        )}
-        {user.role === 'admin' && (
-          <Link to="/settings" className={`flex flex-col items-center gap-1 ${location.pathname === '/settings' ? 'text-amber-600' : 'text-slate-400'}`}>
-            <i className="fas fa-cog text-lg"></i>
-            <span className="text-[8px] font-black uppercase">Settings</span>
-          </Link>
-        )}
+        <Link to="/" className={`flex flex-col items-center gap-1 ${location.pathname === '/' ? 'text-amber-600' : 'text-slate-400'}`}><i className="fas fa-home text-lg"></i><span className="text-[8px] font-black uppercase">Home</span></Link>
+        {user.role !== 'customer' && (<Link to="/customers" className={`flex flex-col items-center gap-1 ${location.pathname.startsWith('/customer') || location.pathname === '/customers' ? 'text-amber-600' : 'text-slate-400'}`}><i className="fas fa-users text-lg"></i><span className="text-[8px] font-black uppercase">Clients</span></Link>)}
+        {user.role === 'admin' && (<Link to="/settings" className={`flex flex-col items-center gap-1 ${location.pathname === '/settings' ? 'text-amber-600' : 'text-slate-400'}`}><i className="fas fa-cog text-lg"></i><span className="text-[8px] font-black uppercase">Settings</span></Link>)}
       </div>
     </div>
   );
 };
 
-const AppWrapper: React.FC = () => (
-  <Router>
-    <App />
-  </Router>
-);
-
-export default AppWrapper;
+export default function AppWrapper() {
+  return (
+    <Router>
+      <App />
+    </Router>
+  );
+}
