@@ -4,13 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Zahratalsawsen - Boutique Operations</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+    "@google/genai": "https://esm.sh/@google/genai"
+  }
+}
+</script>
 <style>
   :root {
     --gold-primary: #d97706;
     --gold-light: #fbbf24;
     --slate-bg: #f8fafc;
+    --whatsapp-green: #25D366;
   }
   
   body {
@@ -84,10 +97,16 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   /* Hide scrollbar for IE, Edge and Firefox */
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  @keyframes status-pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+  }
+  .status-pulse { animation: status-pulse 2s infinite; }
 </style>
 </head>
 <body class="selection:bg-amber-100 selection:text-amber-900 pb-16 md:pb-0">
   <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

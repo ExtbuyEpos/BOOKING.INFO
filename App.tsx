@@ -8,7 +8,7 @@ import {
   getUniqueCustomers, getOrdersByPhoneAndPin,
   getVatRate, saveVatRate, getShopPhone, saveShopPhone
 } from './store/orderStore';
-import { generateOrderId, getStatusAdvice } from './services/geminiService';
+import { generateOrderId, getStatusAdvice, draftWhatsAppMessage } from './services/geminiService';
 import { StatusBadge } from './components/StatusBadge';
 
 // --- BRAND ASSETS ---
@@ -45,7 +45,7 @@ const translations = {
     recentOrders: 'Recent Bookings',
     searchPlaceholder: 'Search by ID or Name...',
     backToDashboard: 'Return to Hub',
-    neuralInsight: 'Boutique Expert Advice',
+    neuralInsight: 'Boutique Intelligence',
     grandTotal: 'Total Payable',
     stateControl: 'Update Phase',
     statusNotePlaceholder: 'Add internal progress notes...',
@@ -100,7 +100,10 @@ const translations = {
     qrCode: 'Scan QR Code',
     shopProfile: 'Shop Profile',
     shopPhone: 'Official Shop WhatsApp',
-    qrScanMsg: 'Scan this code to view Digital Invoice'
+    qrScanMsg: 'Scan this code to view Digital Invoice',
+    waLink: 'Link Admin Phone',
+    waConnected: 'WhatsApp Linked',
+    waNotConnected: 'WhatsApp Not Linked'
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -131,7 +134,7 @@ const translations = {
     recentOrders: 'الحجوزات الأخيرة',
     searchPlaceholder: 'بحث بالرقم أو الاسم...',
     backToDashboard: 'العودة للرئيسية',
-    neuralInsight: 'نصيحة خبير البوتيك',
+    neuralInsight: 'ذكاء البوتيك',
     grandTotal: 'إجمالي المبلغ',
     stateControl: 'تحديث المرحلة',
     statusNotePlaceholder: 'إضافة ملاحظات التقدم الداخلية...',
@@ -186,37 +189,22 @@ const translations = {
     qrCode: 'رمز QR',
     shopProfile: 'ملف المتجر',
     shopPhone: 'رقم واتساب المتجر الرسمي',
-    qrScanMsg: 'امسح الرمز لعرض الفاتورة الرقمية'
+    qrScanMsg: 'امسح الرمز لعرض الفاتورة الرقمية',
+    waLink: 'ربط هاتف المسؤول',
+    waConnected: 'تم ربط واتساب',
+    waNotConnected: 'واتساب غير مرتبط'
   }
-};
-
-// --- UTILS ---
-const formatWhatsAppMessage = (order: Order, t: any, lang: Language) => {
-  const itemsText = order.items.map(it => `• ${it.itemName}: ${it.price.toFixed(3)} x ${it.quantity}`).join('\n');
-  const fees = order.additionalFees || { delivery: 0, alteration: 0, cutting: 0 };
-  const shareUrl = `${window.location.origin}/#/invoice/${order.id}`;
-
-  const header = lang === 'ar' 
-    ? `*${t.boutique}*\n--------------------------`
-    : `*${t.boutique}*\n--------------------------`;
-
-  const body = lang === 'ar'
-    ? `عزيزي/ة *${order.customerName}*،\nإليك تفاصيل حجزك رقم: *${order.id}*\n\n*الأصناف:*\n${itemsText}\n\n*الرسوم الإضافية:*\n• التوصيل: ${fees.delivery.toFixed(3)}\n• التعديل: ${fees.alteration.toFixed(3)}\n• القص: ${fees.cutting.toFixed(3)}\n\n*الضريبة (${order.vatRate}%):* ${order.vatAmount.toFixed(3)}\n*الإجمالي:* *${order.totalAmount.toFixed(3)} ${t.currency}*\n\n*الحالة:* ${order.orderStatus}\n*الدفع:* ${order.paymentStatus}\n\nيمكنك عرض الفاتورة الرقمية هنا:\n${shareUrl}`
-    : `Dear *${order.customerName}*,\nHere are the details for your booking *#${order.id}*\n\n*Items:*\n${itemsText}\n\n*Additional Fees:*\n• Delivery: ${fees.delivery.toFixed(3)}\n• Alteration: ${fees.alteration.toFixed(3)}\n• Cutting: ${fees.cutting.toFixed(3)}\n\n*VAT (${order.vatRate}%):* ${order.vatAmount.toFixed(3)}\n*Total Amount:* *${order.totalAmount.toFixed(3)} ${t.currency}*\n\n*Status:* ${order.orderStatus}\n*Payment:* ${order.paymentStatus}\n\nView digital invoice here:\n${shareUrl}`;
-
-  return encodeURIComponent(`${header}\n${body}`);
 };
 
 // --- SHARED UI COMPONENTS ---
 
-const QRModal: React.FC<{ url: string; onClose: () => void; lang: Language }> = ({ url, onClose, lang }) => {
+const QRModal: React.FC<{ url: string; onClose: () => void; lang: Language; title?: string }> = ({ url, onClose, lang, title }) => {
   const t = translations[lang];
-  // Using qrserver API (Free, no key needed)
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade" onClick={onClose}>
       <div className="bg-white p-10 rounded-[3rem] shadow-2xl flex flex-col items-center gap-6 animate-zoom" onClick={e => e.stopPropagation()}>
-        <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest">{t.qrCode}</h3>
+        <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest">{title || t.qrCode}</h3>
         <div className="w-64 h-64 bg-slate-100 rounded-3xl overflow-hidden p-4 border border-slate-100 flex items-center justify-center">
           <img src={qrUrl} className="w-full h-full" alt="QR Code" />
         </div>
@@ -335,9 +323,11 @@ const InvoicePage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) =
     }
   };
 
-  const handleWhatsAppShare = () => {
-    const message = formatWhatsAppMessage(activeOrder, t, lang);
+  const handleWhatsAppShare = async () => {
+    const aiMessage = await draftWhatsAppMessage(activeOrder, lang);
     const cleanPhone = activeOrder.customerPhone.replace(/\D/g, '');
+    const defaultMsg = `Invoice from ${t.boutique}: ${window.location.href}`;
+    const message = encodeURIComponent(aiMessage || defaultMsg);
     const url = `https://wa.me/${cleanPhone.startsWith('968') ? '' : '968'}${cleanPhone}?text=${message}`;
     window.open(url, '_blank');
   };
@@ -968,6 +958,7 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
   const [newName, setNewName] = useState('');
   const [newPin, setNewPin] = useState('');
   const [newRole, setNewRole] = useState<'admin' | 'staff' | 'viewer'>('staff');
+  const [showWALinking, setShowWALinking] = useState(false);
 
   useEffect(() => { setUsers(getUsers()); setLogs(getAdminLogs()); }, []);
   
@@ -993,12 +984,27 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 space-y-12 animate-entry">
           <div className="bg-emerald-600/5 p-8 rounded-3xl border border-emerald-600/20">
-            <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em] mb-6">{t.shopProfile}</h3>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.4em]">{t.shopProfile}</h3>
+              <div className="flex items-center gap-2">
+                 <div className={`w-2 h-2 rounded-full ${shopPh ? 'bg-emerald-500 status-pulse' : 'bg-slate-300'}`}></div>
+                 <span className="text-[8px] font-black uppercase text-slate-400">{shopPh ? t.waConnected : t.waNotConnected}</span>
+              </div>
+            </div>
             <div className="flex gap-4">
               <input type="text" value={shopPh} onChange={e => setShopPh(e.target.value)} className="flex-1 bg-white p-4 rounded-2xl border border-slate-200 text-slate-900 outline-none font-black" placeholder={t.shopPhone} />
               <button onClick={handleShopSave} className="px-8 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-emerald-600/20 transition-soft">{t.save}</button>
             </div>
-            <p className="text-[8px] font-bold text-slate-400 uppercase mt-4 tracking-widest">Linked WhatsApp will be used for official sharing</p>
+            <div className="mt-6 flex flex-col md:flex-row items-center gap-6 p-6 bg-white border border-emerald-100 rounded-3xl">
+               <div className="flex-1">
+                  <h4 className="text-sm font-black text-slate-900 mb-1">{t.waLink}</h4>
+                  <p className="text-[9px] text-slate-400 font-bold uppercase leading-relaxed tracking-wider">Sync your official phone with the hub to enable automated invoice broadcasts.</p>
+                  <button onClick={() => setShowWALinking(true)} className="mt-4 text-[10px] font-black uppercase text-emerald-600 border border-emerald-600/30 px-6 py-2 rounded-xl hover:bg-emerald-600 hover:text-white transition-soft">Open Linking Terminal</button>
+               </div>
+               <div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center shrink-0 border border-slate-100 border-dashed">
+                  <i className="fab fa-whatsapp text-3xl text-emerald-600 opacity-40"></i>
+               </div>
+            </div>
           </div>
           <div className="bg-amber-600/5 p-8 rounded-3xl border border-amber-600/20">
             <h3 className="text-[10px] font-black text-amber-600 uppercase tracking-[0.4em] mb-6">{t.vatSetup}</h3>
@@ -1055,6 +1061,7 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
           </div>
         </section>
       </div>
+      {showWALinking && <QRModal url="https://web.whatsapp.com" title={t.waLink} onClose={() => setShowWALinking(false)} lang={lang} />}
     </div>
   );
 };
@@ -1125,10 +1132,12 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
     }
   };
 
-  const handleWhatsAppShare = () => {
+  const handleWhatsAppShare = async () => {
     if (!order) return;
-    const message = formatWhatsAppMessage(order, t, lang);
+    const aiMessage = await draftWhatsAppMessage(order, lang);
     const cleanPhone = order.customerPhone.replace(/\D/g, '');
+    const defaultMsg = `Dear ${order.customerName}, your order #${order.id} from ${t.boutique} is currently ${order.orderStatus}. View invoice: ${window.location.origin}/#/invoice/${order.id}`;
+    const message = encodeURIComponent(aiMessage || defaultMsg);
     const url = `https://wa.me/${cleanPhone.startsWith('968') ? '' : '968'}${cleanPhone}?text=${message}`;
     window.open(url, '_blank');
   };
@@ -1164,7 +1173,7 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
             <div className="w-20 h-20 bg-amber-600 rounded-3xl flex items-center justify-center shrink-0 shadow-xl relative z-10"><i className="fas fa-robot text-white text-3xl"></i></div>
             <div className="flex-1 relative z-10">
                <h3 className="text-[10px] font-black text-amber-400 uppercase tracking-[0.4em] mb-2">{t.neuralInsight}</h3>
-               <p className="text-white text-xl font-black italic">"{advice || 'Consulting database...'}"</p>
+               <p className="text-white text-xl font-black italic">"{advice || 'Consulting hub...'}"</p>
             </div>
           </section>
           <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 animate-entry stagger-1">
