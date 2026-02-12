@@ -108,7 +108,8 @@ const translations = {
     loyaltyPlatinum: "Platinum Member",
     viewAllOrders: "All Bookings",
     customerProfile: "Customer Record",
-    totalSpend: "Total Investment"
+    totalSpend: "Total Investment",
+    askAI: "Ask AI for Next Step"
   },
   ar: {
     dashboard: "مركز العمليات",
@@ -210,7 +211,8 @@ const translations = {
     loyaltyPlatinum: "عضو بلاتيني",
     viewAllOrders: "جميع الحجوزات",
     customerProfile: "سجل العميل",
-    totalSpend: "إجمالي الاستثمار"
+    totalSpend: "إجمالي الاستثمار",
+    askAI: "اطلب من الذكاء الاصطناعي الخطوة التالية"
   }
 };
 
@@ -359,7 +361,7 @@ const CustomerProfilePage: React.FC<{ user: User; lang: Language }> = ({ user, l
     return { totalSpent, count, since, level };
   }, [orders, t]);
 
-  if (orders.length === 0) return <div className="p-20 text-center font-black text-slate-400 uppercase tracking-widest">{t.orderNotFound}</div>;
+  if (orders.length === 0) return <div className="p-20 text-center font-black text-slate-400 uppercase tracking-widest dark:text-slate-600">{t.orderNotFound}</div>;
 
   const clientName = orders[0].customerName;
 
@@ -367,7 +369,7 @@ const CustomerProfilePage: React.FC<{ user: User; lang: Language }> = ({ user, l
     <div className="max-w-7xl mx-auto px-6 py-12 animate-fade" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       <header className="mb-12 flex flex-col md:flex-row justify-between items-end gap-8 animate-entry">
         <div>
-          <button onClick={() => navigate(-1)} className="mb-6 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl font-black text-[9px] uppercase tracking-widest text-slate-400 hover:text-amber-600 transition-soft">
+          <button onClick={() => navigate(-1)} className="mb-6 px-5 py-2.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl font-black text-[9px] uppercase tracking-widest text-slate-400 hover:text-amber-600 transition-soft shadow-sm">
             <i className={`fas ${lang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'} mr-2`}></i> {t.backToDashboard}
           </button>
           <h2 className="text-5xl font-black text-slate-900 dark:text-white tracking-tighter mb-3">{clientName}</h2>
@@ -411,7 +413,7 @@ const CustomerProfilePage: React.FC<{ user: User; lang: Language }> = ({ user, l
                   <tr key={order.id} className="group hover:bg-amber-50/20 dark:hover:bg-amber-900/10 transition-soft cursor-pointer" onClick={() => navigate(`/order/${order.id}`)}>
                     <td className="px-8 py-8">
                       <div className="flex items-center gap-6">
-                        <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-sm transition-soft">
                           {firstImg ? <img src={firstImg} className="w-full h-full object-cover" alt={order.id} /> : <i className="fas fa-spa text-slate-300"></i>}
                         </div>
                         <div>
@@ -471,7 +473,7 @@ const TrackingPage: React.FC<{ lang: Language }> = ({ lang }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black py-12 px-6" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="max-w-3xl auto space-y-10">
+      <div className="max-w-3xl mx-auto space-y-10">
         <header className="text-center animate-entry">
           <div className="w-20 h-20 bg-gradient-to-br from-amber-600 to-yellow-400 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
             <i className="fas fa-spa text-black text-2xl"></i>
@@ -842,7 +844,6 @@ const CreateOrderModal: React.FC<{ user: User; lang: Language; onClose: () => vo
 
   const handleAddItem = () => {
     if (!newItem.name || !newItem.price) return;
-    // Fix key collision with more unique ID
     const item: OrderItem = {
       id: `${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       itemName: newItem.name,
@@ -927,26 +928,26 @@ const CreateOrderModal: React.FC<{ user: User; lang: Language; onClose: () => vo
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest px-2">{t.clientName}</label>
-                  <input required type="text" value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-bold shadow-inner dark:text-white" placeholder="Ex: Sarah Khan" />
+                  <input required type="text" value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-bold shadow-inner dark:text-white dark:border-slate-700" placeholder="Ex: Sarah Khan" />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest px-2">{t.phone}</label>
-                  <input required type="text" value={formData.customerPhone} onChange={e => setFormData({...formData, customerPhone: e.target.value})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-bold shadow-inner dark:text-white" placeholder="+968 0000 0000" />
+                  <input required type="text" value={formData.customerPhone} onChange={e => setFormData({...formData, customerPhone: e.target.value})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-bold shadow-inner dark:text-white dark:border-slate-700" placeholder="+968 0000 0000" />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest px-2">{t.address}</label>
-                  <textarea value={formData.customerAddress} onChange={e => setFormData({...formData, customerAddress: e.target.value})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-bold shadow-inner h-20 resize-none dark:text-white" placeholder="Delivery details..." />
+                  <textarea value={formData.customerAddress} onChange={e => setFormData({...formData, customerAddress: e.target.value})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-bold shadow-inner h-20 resize-none dark:text-white dark:border-slate-700" placeholder="Delivery details..." />
                 </div>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
                   <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest px-2">{t.pinEntry}</label>
-                  <input required type="password" value={formData.customerPin} onChange={e => setFormData({...formData, customerPin: e.target.value})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-black text-center text-2xl tracking-[0.6em] shadow-inner dark:text-white" placeholder="••••" />
+                  <input required type="password" value={formData.customerPin} onChange={e => setFormData({...formData, customerPin: e.target.value})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-black text-center text-2xl tracking-[0.6em] shadow-inner dark:text-white dark:border-slate-700" placeholder="••••" />
                 </div>
                 <div className="space-y-2">
                   <label className="block text-[8px] font-black text-slate-400 uppercase tracking-widest px-2">{t.creditStatus}</label>
-                  <select value={formData.paymentStatus} onChange={e => setFormData({...formData, paymentStatus: e.target.value as PaymentStatus})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-black uppercase text-[9px] shadow-sm cursor-pointer dark:text-white">
+                  <select value={formData.paymentStatus} onChange={e => setFormData({...formData, paymentStatus: e.target.value as PaymentStatus})} className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-transparent focus:border-amber-500 outline-none font-black uppercase text-[9px] shadow-sm cursor-pointer dark:text-white dark:border-slate-700">
                     <option value={PaymentStatus.UNPAID}>{t.unpaid}</option>
                     <option value={PaymentStatus.PAID}>{t.paid}</option>
                   </select>
@@ -1034,6 +1035,7 @@ const LoginPage: React.FC<{ onLogin: (user: User) => void; lang: Language; setLa
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const t = translations[lang];
 
   const handleLogin = (e: React.FormEvent) => {
@@ -1047,14 +1049,45 @@ const LoginPage: React.FC<{ onLogin: (user: User) => void; lang: Language; setLa
     }
   };
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const { clientX, clientY, currentTarget } = e;
+    const { left, top, width, height } = currentTarget.getBoundingClientRect();
+    const x = ((clientX - left) / width - 0.5) * 20;
+    const y = ((clientY - top) / height - 0.5) * -20;
+    setTilt({ x, y });
+  };
+
+  const handleMouseLeave = () => setTilt({ x: 0, y: 0 });
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-black relative overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-amber-600/20 rounded-full blur-[160px] animate-pulse"></div>
+    <div 
+      className="min-h-screen flex items-center justify-center p-6 bg-black relative overflow-hidden perspective-1000" 
+      dir={lang === 'ar' ? 'rtl' : 'ltr'}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* Live 3D Floating Background Elements */}
+      <div 
+        className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-amber-600/10 rounded-full blur-[120px] animate-pulse pointer-events-none"
+        style={{ transform: `translate(${tilt.x * 2}px, ${tilt.y * 2}px)` }}
+      ></div>
+      <div 
+        className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-yellow-400/5 rounded-full blur-[120px] animate-pulse pointer-events-none delay-1000"
+        style={{ transform: `translate(${tilt.x * -1}px, ${tilt.y * -1}px)` }}
+      ></div>
+
       <div className="absolute top-8 right-8 z-10 flex gap-3">
-        <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="px-5 py-2.5 bg-white/5 backdrop-blur-3xl border border-white/10 text-white rounded-lg font-black text-[9px] uppercase tracking-[0.2em] hover:bg-amber-600/20 hover:border-amber-500/50 transition-soft">{lang === 'en' ? 'Arabic System' : 'النظام الإنجليزي'}</button>
+        <button onClick={() => setLang(lang === 'en' ? 'ar' : 'en')} className="px-5 py-2.5 bg-white/5 backdrop-blur-3xl border border-white/10 text-white rounded-lg font-black text-[9px] uppercase tracking-[0.2em] hover:bg-amber-600/20 hover:border-amber-500/50 transition-soft">
+          {lang === 'en' ? 'Arabic System' : 'النظام الإنجليزي'}
+        </button>
       </div>
-      <div className="bg-white/[0.04] backdrop-blur-[40px] p-10 sm:p-14 rounded-[3rem] border border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] w-full max-w-md relative group animate-fade">
-        <div className="text-center mb-10">
+
+      {/* 3D Tilting Card */}
+      <div 
+        className="bg-white/[0.04] backdrop-blur-[40px] p-10 sm:p-14 rounded-[3rem] border border-white/10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] w-full max-w-md relative group animate-fade transition-transform duration-200 ease-out preserve-3d"
+        style={{ transform: `rotateY(${tilt.x}deg) rotateX(${tilt.y}deg)` }}
+      >
+        <div className="text-center mb-10 translate-z-10">
           <div className="w-24 h-24 bg-gradient-to-br from-amber-600 to-yellow-400 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-[0_20px_40px_rgba(217,119,6,0.4)] animate-float">
             <i className="fas fa-spa text-black text-4xl"></i>
           </div>
@@ -1063,7 +1096,7 @@ const LoginPage: React.FC<{ onLogin: (user: User) => void; lang: Language; setLa
           <p className="text-amber-500 font-black uppercase tracking-[0.4em] text-[10px]">{t.securePortal}</p>
         </div>
         
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-6 translate-z-20">
           <div className="space-y-5">
             <div className="group relative">
               <label className="block text-[8px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-4 group-focus-within:text-amber-400 transition-colors">{t.loginId}</label>
@@ -1072,7 +1105,7 @@ const LoginPage: React.FC<{ onLogin: (user: User) => void; lang: Language; setLa
                 autoFocus 
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
-                className="w-full px-6 py-4 rounded-xl border border-white/5 bg-white/5 text-white focus:border-amber-50/10 focus:bg-white/10 outline-none transition-soft font-bold text-base placeholder:text-slate-800" 
+                className="w-full px-6 py-4 rounded-xl border border-white/5 bg-white/5 text-white focus:border-amber-50/10 focus:bg-white/10 outline-none transition-soft font-bold text-base placeholder:text-slate-700" 
                 placeholder="ID / PHONE / NAME" 
                 required 
               />
@@ -1083,7 +1116,7 @@ const LoginPage: React.FC<{ onLogin: (user: User) => void; lang: Language; setLa
                 type="password" 
                 value={pin} 
                 onChange={(e) => setPin(e.target.value)} 
-                className="w-full px-6 py-4 rounded-xl border border-white/5 bg-white/5 text-white text-center text-xl tracking-[0.2em] focus:border-amber-50/10 focus:bg-white/10 outline-none transition-soft placeholder:text-slate-800" 
+                className="w-full px-6 py-4 rounded-xl border border-white/5 bg-white/5 text-white text-center text-xl tracking-[0.2em] focus:border-amber-50/10 focus:bg-white/10 outline-none transition-soft placeholder:text-slate-700" 
                 placeholder="••••" 
                 required 
               />
@@ -1177,7 +1210,7 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
               <i className={`fas ${lang === 'ar' ? 'fa-arrow-right' : 'fa-arrow-left'} mr-2`}></i> {t.backToDashboard}
             </button>
             <div className="flex items-center gap-2">
-              <button onClick={handleShare} className={`px-5 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-soft border flex items-center gap-3 ${copied ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-amber-500'}`}>
+              <button onClick={handleShare} className={`px-5 py-3 rounded-xl font-black text-[9px] uppercase tracking-widest transition-soft border flex items-center gap-3 ${copied ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-slate-900 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-amber-50'}`}>
                 <i className={`fas ${copied ? 'fa-check' : 'fa-link'}`}></i>
                 {copied ? t.linkCopied : t.shareOrder}
               </button>
@@ -1191,7 +1224,38 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2 space-y-10">
-            <section className="bg-white dark:bg-slate-900/60 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm animate-entry">
+            {/* AI Advice Prominent Box */}
+            <section className="bg-slate-900 dark:bg-amber-500 p-8 rounded-[2.5rem] shadow-2xl animate-entry relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-10 text-8xl text-white dark:text-black group-hover:scale-125 transition-soft">
+                <i className="fas fa-brain"></i>
+              </div>
+              <div className="relative z-10 flex flex-col sm:flex-row items-center gap-8">
+                <div className="w-20 h-20 bg-amber-600 dark:bg-black rounded-2xl flex items-center justify-center shrink-0 shadow-xl">
+                  <i className="fas fa-robot text-white dark:text-amber-500 text-3xl"></i>
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                   <h3 className="text-[10px] font-black text-amber-400 dark:text-black/60 uppercase tracking-[0.4em] mb-3">{t.neuralInsight}</h3>
+                   <div className="min-h-[60px] flex items-center justify-center sm:justify-start">
+                     {loadingAdvice ? (
+                        <div className="flex items-center gap-3">
+                          <i className="fas fa-circle-notch fa-spin text-white dark:text-black"></i>
+                          <span className="text-white/50 dark:text-black/50 font-bold uppercase text-[10px] tracking-widest animate-pulse">Analyzing studio workflow...</span>
+                        </div>
+                     ) : (
+                        <p className="text-white dark:text-black text-xl font-black italic leading-tight tracking-tight">"{advice || 'Consulting boutique database...'}"</p>
+                     )}
+                   </div>
+                </div>
+                {canEdit && (
+                  <button onClick={() => refreshAdvice(order.orderStatus)} disabled={loadingAdvice} className="shrink-0 bg-white/10 dark:bg-black/10 hover:bg-white/20 dark:hover:bg-black/20 text-white dark:text-black px-6 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-soft border border-white/5 dark:border-black/5 flex items-center gap-3 group/ai">
+                    <i className={`fas fa-sparkles ${loadingAdvice ? 'fa-spin' : 'group-hover/ai:rotate-12 transition-transform'}`}></i>
+                    {t.askAI}
+                  </button>
+                )}
+              </div>
+            </section>
+
+            <section className="bg-white dark:bg-slate-900/60 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm animate-entry stagger-1">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8">{t.manifest}</h3>
               <div className="space-y-6">
                 {order.items.map(item => (
@@ -1218,7 +1282,7 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
               </div>
             </section>
 
-            <section className="bg-white dark:bg-slate-900/60 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm animate-entry stagger-1">
+            <section className="bg-white dark:bg-slate-900/60 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm animate-entry stagger-2">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8">{t.operationalLogs}</h3>
               <div className="space-y-8">
                 {order.history.map((entry, i) => (
@@ -1238,47 +1302,30 @@ const OrderDetailsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang
 
           <div className="space-y-10">
             {canEdit && (
-              <section className="bg-slate-900 dark:bg-amber-500 p-10 rounded-[2.5rem] shadow-2xl animate-entry">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-amber-600 dark:bg-black rounded-xl flex items-center justify-center shadow-lg"><i className="fas fa-brain text-white dark:text-amber-500 text-xs"></i></div>
-                    <h3 className="text-[10px] font-black text-white dark:text-black uppercase tracking-[0.4em]">{t.neuralInsight}</h3>
-                  </div>
-                  <button onClick={() => refreshAdvice(order.orderStatus)} className="w-8 h-8 rounded-lg bg-white/10 dark:bg-black/10 flex items-center justify-center text-white dark:text-black hover:bg-white/20 transition-soft">
-                    <i className={`fas fa-sync-alt text-[10px] ${loadingAdvice ? 'fa-spin' : ''}`}></i>
-                  </button>
+              <section className="bg-white dark:bg-slate-900/60 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm animate-entry">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8">{t.stateControl}</h3>
+                <div className="grid grid-cols-1 gap-3 mb-6">
+                  {Object.values(OrderStatus).map(status => (
+                    <button 
+                      key={status}
+                      disabled={order.orderStatus === status || updating}
+                      onClick={() => handleUpdateStatus(status)}
+                      className={`py-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-soft active:scale-95 border ${order.orderStatus === status ? 'bg-amber-600 text-white border-amber-600 opacity-50 cursor-not-allowed' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-100 dark:border-slate-700 hover:border-amber-600 dark:hover:border-amber-500'}`}
+                    >
+                      {status}
+                    </button>
+                  ))}
                 </div>
-                <div className="bg-white/5 dark:bg-black/5 p-6 rounded-2xl border border-white/10 dark:border-black/10 min-h-[120px] flex items-center justify-center italic text-center">
-                  {loadingAdvice ? <i className="fas fa-circle-notch fa-spin text-amber-400 dark:text-black text-2xl"></i> : (
-                    <p className="text-amber-100 dark:text-black text-sm font-bold leading-relaxed">{advice || 'Analyzing boutique progress...'}</p>
-                  )}
-                </div>
-                
-                <div className="mt-10 space-y-6">
-                  <h4 className="text-[9px] font-black text-white/40 dark:text-black/40 uppercase tracking-[0.3em]">{t.stateControl}</h4>
-                  <div className="grid grid-cols-1 gap-3">
-                    {Object.values(OrderStatus).map(status => (
-                      <button 
-                        key={status}
-                        disabled={order.orderStatus === status || updating}
-                        onClick={() => handleUpdateStatus(status)}
-                        className={`py-3 rounded-xl font-black uppercase text-[9px] tracking-widest transition-soft active:scale-95 ${order.orderStatus === status ? 'bg-amber-600 text-white opacity-50 cursor-not-allowed' : 'bg-white/10 dark:bg-black/10 text-white dark:text-black hover:bg-amber-600 hover:text-white dark:hover:bg-black dark:hover:text-amber-500'}`}
-                      >
-                        {status}
-                      </button>
-                    ))}
-                  </div>
-                  <textarea 
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    className="w-full bg-white/5 dark:bg-black/5 border border-white/10 dark:border-black/10 rounded-xl p-4 text-white dark:text-black placeholder:text-white/20 dark:placeholder:text-black/20 text-xs outline-none focus:border-amber-500 h-24 resize-none"
-                    placeholder={t.statusNotePlaceholder}
-                  />
-                </div>
+                <textarea 
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 text-xs outline-none focus:border-amber-500 h-24 resize-none transition-colors"
+                  placeholder={t.statusNotePlaceholder}
+                />
               </section>
             )}
 
-            <section className="bg-white dark:bg-slate-900/60 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm animate-entry stagger-2">
+            <section className="bg-white dark:bg-slate-900/60 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm animate-entry stagger-3">
               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mb-8">{t.orderSpecifics}</h3>
               <div className="space-y-6">
                 <div className="flex flex-col">
@@ -1334,12 +1381,10 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
       
       const sorted = all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
-      // Detect new orders for notification
       if (prevOrderCountRef.current > 0 && sorted.length > prevOrderCountRef.current) {
         setHasNewOrder(true);
       }
       prevOrderCountRef.current = sorted.length;
-      
       setOrders(sorted);
     };
 
@@ -1348,7 +1393,6 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
     return () => clearInterval(interval);
   }, [user]);
 
-  // Clear new order notification after 10 seconds
   useEffect(() => {
     if (hasNewOrder) {
       const timer = setTimeout(() => setHasNewOrder(false), 10000);
@@ -1386,7 +1430,7 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
         </div>
         
         {user.role === 'customer' && (
-          <div className="w-full md:w-auto flex items-center gap-6 p-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-[2rem] shadow-sm animate-entry">
+          <div className="w-full md:w-auto flex items-center gap-6 p-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-900/30 rounded-[2rem] shadow-sm animate-entry transition-colors">
             <div className="w-12 h-12 bg-amber-600 text-white rounded-xl flex items-center justify-center text-xl shadow-lg">
               <i className="fas fa-gem"></i>
             </div>
@@ -1411,7 +1455,7 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
         <StatCard label={user.role === 'customer' ? t.lifetimeSpent : t.totalValue} value={`${stats.revenue.toFixed(2)} ${t.currency}`} icon="fa-vault" color="text-amber-600" />
       </div>
 
-      <div className="bg-white dark:bg-slate-900/60 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden animate-entry stagger-2">
+      <div className="bg-white dark:bg-slate-900/60 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden animate-entry stagger-2 transition-colors">
         <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-6">
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">{user.role === 'customer' ? t.viewAllOrders : t.recentOrders}</h3>
           {user.role !== 'customer' && (
@@ -1466,7 +1510,11 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
                           <span className="font-black text-slate-900 dark:text-white text-base tracking-tighter">{order.totalAmount.toFixed(2)} {t.currency}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-8"><StatusBadge status={order.orderStatus} /></td>
+                      <td className="px-8 py-8">
+                         <div title={order.orderStatus}>
+                            <StatusBadge status={order.orderStatus} />
+                         </div>
+                      </td>
                       <td className={`px-8 py-8 ${lang === 'ar' ? 'text-left' : 'text-right'}`}>
                          <div className="flex items-center justify-end gap-3">
                            <i className={`fas ${lang === 'ar' ? 'fa-chevron-left' : 'fa-chevron-right'} text-slate-200 group-hover:text-amber-600 group-hover:translate-x-1 transition-soft`}></i>
@@ -1493,11 +1541,15 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : null;
   });
   const [lang, setLang] = useState<Language>('en');
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('zs_theme');
+    return (saved as Theme) || 'dark';
+  });
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     document.body.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('zs_theme', theme);
   }, [theme]);
 
   const handleLogin = (u: User) => {

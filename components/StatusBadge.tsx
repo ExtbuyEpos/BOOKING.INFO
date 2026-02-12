@@ -44,7 +44,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   };
 
   return (
-    <span className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm inline-flex items-center gap-3 transition-all duration-500 select-none ${getStyles()} ${animate ? 'animate-status-change scale-110' : 'scale-100'}`}>
+    <span 
+      title={`Status: ${status}`}
+      className={`px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm inline-flex items-center gap-3 transition-all duration-500 select-none cursor-help ${getStyles()} ${animate ? 'animate-status-change scale-110' : 'scale-100'}`}
+    >
       <i className={`fas ${getIcon()} text-[12px] opacity-90`}></i>
       {status}
     </span>
