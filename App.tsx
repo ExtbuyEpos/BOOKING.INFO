@@ -66,6 +66,7 @@ const translations = {
     totalRevenue: 'Total Revenue Generated',
     copyright: 'All Rights Reserved.',
     poweredBy: 'Powered by',
+    unpaid: 'Unpaid Orders',
   },
   ar: {
     dashboard: 'لوحة التحكم',
@@ -119,6 +120,7 @@ const translations = {
     totalRevenue: 'إجمالي الإيرادات المحققة',
     copyright: 'جميع الحقوق محفوظة.',
     poweredBy: 'بدعم من',
+    unpaid: 'طلبات غير مدفوعة',
   }
 };
 
@@ -371,23 +373,28 @@ const LoginPage: React.FC<{ onLogin: (user: User) => void; lang: Language; setLa
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-black relative overflow-hidden perspective-1000" dir={lang === 'ar' ? 'rtl' : 'ltr'} onMouseMove={handleMouseMove} onMouseLeave={() => setTilt({ x: 0, y: 0 })}>
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-black relative overflow-hidden perspective-1000" dir={lang === 'ar' ? 'rtl' : 'ltr'} onMouseMove={handleMouseMove} onMouseLeave={() => setTilt({ x: 0, y: 0 })}>
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-amber-600/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
-      <div className="bg-white dark:bg-white/[0.02] backdrop-blur-3xl p-8 md:p-14 rounded-[3rem] border border-slate-200 dark:border-white/5 shadow-2xl w-full max-w-md transition-transform duration-200 ease-out preserve-3d" style={{ transform: `rotateY(${tilt.x}deg) rotateX(${tilt.y}deg)` }}>
-        <div className="text-center mb-10 translate-z-10">
-          <div className="w-20 h-20 bg-gradient-to-br from-amber-600 to-yellow-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl animate-float">
-            <i className="fas fa-spa text-black text-3xl"></i>
+      
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="bg-white dark:bg-white/[0.02] backdrop-blur-3xl p-8 md:p-14 rounded-[3rem] border border-slate-200 dark:border-white/5 shadow-2xl w-full max-w-md transition-transform duration-200 ease-out preserve-3d" style={{ transform: `rotateY(${tilt.x}deg) rotateX(${tilt.y}deg)` }}>
+          <div className="text-center mb-10 translate-z-10">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-600 to-yellow-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl animate-float">
+              <i className="fas fa-spa text-black text-3xl"></i>
+            </div>
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-2 italic">Zahratalsawsen</h1>
+            <p className="text-amber-500 font-black uppercase tracking-[0.4em] text-[8px] md:text-[10px]">{t.securePortal}</p>
           </div>
-          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-2 italic">Zahratalsawsen</h1>
-          <p className="text-amber-500 font-black uppercase tracking-[0.4em] text-[8px] md:text-[10px]">{t.securePortal}</p>
+          <form onSubmit={handleLogin} className="space-y-6 translate-z-20">
+            <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder={t.loginId} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20 transition-soft font-bold" required />
+            <input type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder={t.password} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-center text-xl tracking-[0.4em] outline-none focus:ring-2 focus:ring-amber-500/20 transition-soft font-bold" required />
+            {error && <div className="text-rose-500 text-[10px] text-center font-black uppercase tracking-widest">{error}</div>}
+            <button type="submit" className="w-full bg-amber-600 hover:bg-amber-500 text-black font-black py-4 rounded-2xl shadow-xl transition-soft active:scale-95 text-base uppercase tracking-widest">Authenticate Access</button>
+          </form>
         </div>
-        <form onSubmit={handleLogin} className="space-y-6 translate-z-20">
-          <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder={t.loginId} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-amber-500/20 transition-soft font-bold" required />
-          <input type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder={t.password} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 text-slate-900 dark:text-white text-center text-xl tracking-[0.4em] outline-none focus:ring-2 focus:ring-amber-500/20 transition-soft font-bold" required />
-          {error && <div className="text-rose-500 text-[10px] text-center font-black uppercase tracking-widest">{error}</div>}
-          <button type="submit" className="w-full bg-amber-600 hover:bg-amber-500 text-black font-black py-4 rounded-2xl shadow-xl transition-soft active:scale-95 text-base uppercase tracking-widest">Authenticate Access</button>
-        </form>
       </div>
+      
+      <Footer lang={lang} />
     </div>
   );
 };
@@ -414,7 +421,8 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
     const revenue = orders.reduce((acc, o) => acc + o.totalAmount, 0);
     const pending = orders.filter(o => o.orderStatus !== OrderStatus.COMPLETED && o.orderStatus !== OrderStatus.CUSTOMER_RECEIVED).length;
     const completed = orders.filter(o => o.orderStatus === OrderStatus.COMPLETED).length;
-    return { revenue, pending, completed, total: orders.length };
+    const unpaid = orders.filter(o => o.paymentStatus === PaymentStatus.UNPAID).length;
+    return { revenue, pending, completed, total: orders.length, unpaid };
   }, [orders]);
 
   const filtered = orders.filter(o => o.id.toLowerCase().includes(search.toLowerCase()) || o.customerName.toLowerCase().includes(search.toLowerCase()));
@@ -435,11 +443,12 @@ const Dashboard: React.FC<{ user: User; lang: Language }> = ({ user, lang }) => 
         )}
       </header>
       
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        <StatCard label="Volume" value={stats.total} icon="fa-scroll" color="text-amber-600" to="/filtered/analytics/volume" />
-        <StatCard label="Pending" value={stats.pending} icon="fa-spa" color="text-amber-600" to="/filtered/analytics/pending" />
-        <StatCard label="Completed" value={stats.completed} icon="fa-circle-check" color="text-emerald-600" to="/filtered/analytics/completed" />
-        <StatCard label="Revenue" value={`${stats.revenue.toFixed(3)} ${t.currency}`} icon="fa-vault" color="text-amber-600" to="/filtered/analytics/revenue" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10">
+        <StatCard label={t.volume} value={stats.total} icon="fa-scroll" color="text-amber-600" to="/filtered/analytics/volume" />
+        <StatCard label={t.pending} value={stats.pending} icon="fa-spa" color="text-amber-600" to="/filtered/analytics/pending" />
+        <StatCard label={t.completed} value={stats.completed} icon="fa-circle-check" color="text-emerald-600" to="/filtered/analytics/completed" />
+        <StatCard label={t.unpaid} value={stats.unpaid} icon="fa-hand-holding-dollar" color="text-rose-600" to="/filtered/analytics/unpaid" />
+        <StatCard label={t.revenue} value={`${stats.revenue.toFixed(3)} ${t.currency}`} icon="fa-vault" color="text-amber-600" to="/filtered/analytics/revenue" />
       </div>
 
       <div className="bg-white dark:bg-white/[0.02] rounded-3xl md:rounded-[2.5rem] border border-slate-100 dark:border-white/5 shadow-sm overflow-hidden animate-entry">
@@ -718,9 +727,9 @@ const SettingsPage: React.FC<{ user: User; lang: Language }> = ({ user, lang }) 
           {showAddUser && (
             <div className="mb-8 p-6 bg-slate-50 dark:bg-white/5 rounded-2xl space-y-4">
                <input type="text" placeholder={t.name} value={newName} onChange={e => setNewName(e.target.value)} className="w-full px-5 py-3 rounded-xl bg-white dark:bg-black border border-slate-100 dark:border-white/10 dark:text-white outline-none" />
-               <input type="text" placeholder={t.username} value={newUsername} onChange={e => setNewUsername(e.target.value)} className="w-full px-5 py-3 rounded-xl bg-white dark:bg-black border border-slate-100 dark:border-white/10 dark:text-white outline-none" />
-               <input type="text" placeholder={t.pin} value={newPin} onChange={e => setNewPin(e.target.value)} className="w-full px-5 py-3 rounded-xl bg-white dark:bg-black border border-slate-100 dark:border-white/10 dark:text-white outline-none" />
-               <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="w-full px-5 py-3 rounded-xl bg-white dark:bg-black border border-slate-100 dark:border-white/10 dark:text-white outline-none">
+               <input type="text" placeholder={t.username} value={newUsername} onChange={e => setNewUsername(e.target.value)} className="w-full px-5 py-3 rounded-xl bg-white dark:bg-black border border-slate-100 dark:white/10 dark:text-white outline-none" />
+               <input type="text" placeholder={t.pin} value={newPin} onChange={e => setNewPin(e.target.value)} className="w-full px-5 py-3 rounded-xl bg-white dark:bg-black border border-slate-100 dark:white/10 dark:text-white outline-none" />
+               <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="w-full px-5 py-3 rounded-xl bg-white dark:bg-black border border-slate-100 dark:white/10 dark:text-white outline-none">
                  <option value="staff">Staff</option>
                  <option value="admin">Admin</option>
                  <option value="viewer">Viewer</option>
@@ -779,6 +788,7 @@ const FilteredOrdersPage: React.FC<{ user: User; lang: Language }> = ({ user, la
       else if (value === 'pending') setOrders(all.filter(o => o.orderStatus !== OrderStatus.COMPLETED && o.orderStatus !== OrderStatus.CUSTOMER_RECEIVED));
       else if (value === 'completed') setOrders(all.filter(o => o.orderStatus === OrderStatus.COMPLETED));
       else if (value === 'revenue') setOrders(all);
+      else if (value === 'unpaid') setOrders(all.filter(o => o.paymentStatus === PaymentStatus.UNPAID));
     }
   }, [type, value]);
 
@@ -790,6 +800,7 @@ const FilteredOrdersPage: React.FC<{ user: User; lang: Language }> = ({ user, la
       if (value === 'pending') return t.pending;
       if (value === 'completed') return t.completed;
       if (value === 'revenue') return t.revenue;
+      if (value === 'unpaid') return t.unpaid;
     }
     return `${t.status}: ${value}`;
   }, [type, value, t]);
@@ -805,9 +816,9 @@ const FilteredOrdersPage: React.FC<{ user: User; lang: Language }> = ({ user, la
           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter italic">{pageTitle}</h2>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] mt-2">Analytical Manifest</p>
         </div>
-        {value === 'revenue' && (
+        {(value === 'revenue' || value === 'unpaid') && (
           <div className="bg-amber-600 p-6 rounded-3xl shadow-xl min-w-[200px]">
-            <span className="text-[8px] font-black text-black/60 uppercase tracking-widest block mb-1">{t.totalRevenue}</span>
+            <span className="text-[8px] font-black text-black/60 uppercase tracking-widest block mb-1">{value === 'unpaid' ? 'Total Outstanding' : t.totalRevenue}</span>
             <span className="text-2xl font-black text-white">{totalRevenue.toFixed(3)} {t.currency}</span>
           </div>
         )}
