@@ -43,6 +43,8 @@ export interface Order {
   totalAmount: number;
   vatRate: number;
   vatAmount: number;
+  includeVat: boolean;
+  vatIncludedInPrice: boolean;
   additionalFees?: AdditionalFees;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
@@ -68,6 +70,5 @@ export interface AdminLogEntry {
   orderId?: string;
 }
 
-// Added Language and Theme types
+// Added Language type
 export type Language = 'en' | 'ar';
-export type Theme = 'light' | 'dark';

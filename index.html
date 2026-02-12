@@ -36,11 +36,6 @@
     touch-action: manipulation;
   }
 
-  body.dark {
-    background-color: #000000;
-    color: #f1f5f9;
-  }
-
   /* Improved Touch Targets */
   button, input, select, textarea {
     min-height: 44px; /* Apple UI Guideline */
@@ -52,11 +47,6 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.3);
-  }
-  
-  .dark .glass {
-    background: rgba(10, 10, 10, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
   /* 3D Utilities */
@@ -94,16 +84,11 @@
     transform: translateY(-4px);
     box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
   }
-  
-  .dark .card-hover:hover {
-    box-shadow: 0 15px 30px -10px rgba(217, 119, 6, 0.15);
-  }
 
   /* Custom Scrollbar */
   .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
   .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
 
   /* RTL Support */
   [dir="rtl"] { font-family: 'Plus Jakarta Sans', sans-serif; }
